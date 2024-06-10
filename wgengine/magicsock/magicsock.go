@@ -890,6 +890,12 @@ func (c *Conn) determineEndpoints(ctx context.Context) ([]tailcfg.Endpoint, erro
 		}
 	}
 
+	if ude := envknob.String("TS_USER_DEFINED_ENDPOINTS"); ude != "" {
+		for _, addr := range strings.Split(ude, ",") {
+			addAddr(ipp(addr), tailcfg.EndpointUserDefined)
+		}
+	}
+
 	// If we didn't have a portmap earlier, maybe it's done by now.
 	if !havePortmap {
 		portmapExt, havePortmap = c.portMapper.GetCachedMappingOrStartCreatingOne()

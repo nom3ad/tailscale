@@ -1172,6 +1172,7 @@ const (
 	EndpointSTUN           = EndpointType(2)
 	EndpointPortmapped     = EndpointType(3)
 	EndpointSTUN4LocalPort = EndpointType(4) // hard NAT: STUN'ed IPv4 address + local fixed port
+	EndpointUserDefined    = EndpointType(5) // user-defined endpoint
 )
 
 func (et EndpointType) String() string {
@@ -1184,6 +1185,8 @@ func (et EndpointType) String() string {
 		return "stun"
 	case EndpointPortmapped:
 		return "portmap"
+	case EndpointUserDefined:
+		return "userdefined"
 	case EndpointSTUN4LocalPort:
 		return "stun4localport"
 	}

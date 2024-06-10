@@ -151,6 +151,10 @@ type Server struct {
 	closed              bool
 }
 
+func (s *Server) Sneak() *netstack.Impl {
+	return s.netstack
+}
+
 // FallbackTCPHandler describes the callback which
 // conditionally handles an incoming TCP flow for the
 // provided (src/port, dst/port) 4-tuple. These are registered

@@ -234,6 +234,22 @@ type Impl struct {
 	// unfortunate that we have to track this all twice, but thankfully the
 	// map only holds pending (in-flight) packets, and it's reasonably cheap.
 	packetsInFlight map[stack.TransportEndpointID]struct{}
+
+	UnhandledPb func(tei stack.TransportEndpointID, pb *stack.PacketBuffer) bool
+}
+
+func (ns *Impl) Sneak() (*stack.Stack, *tstun.Wrapper) {
+	return ns.ipstack, ns.tundev
+}
+
+func (ns *Impl) _patchProtoHandler(h protocolHandlerFunc) protocolHandlerFunc {
+	return func(tei stack.TransportEndpointID, pb *stack.PacketBuffer) bool {
+		ret := h(tei, pb)
+		if !ret && ns.UnhandledPb != nil {
+			return ns.UnhandledPb(tei, pb)
+		}
+		return ret
+	}
 }
 
 const nicID = 1
@@ -512,8 +528,8 @@ func (ns *Impl) Start(lb *ipnlocal.LocalBackend) error {
 	const tcpReceiveBufferSize = 0
 	tcpFwd := tcp.NewForwarder(ns.ipstack, tcpReceiveBufferSize, maxInFlightConnectionAttempts(), ns.acceptTCP)
 	udpFwd := udp.NewForwarder(ns.ipstack, ns.acceptUDP)
-	ns.ipstack.SetTransportProtocolHandler(tcp.ProtocolNumber, ns.wrapTCPProtocolHandler(tcpFwd.HandlePacket))
-	ns.ipstack.SetTransportProtocolHandler(udp.ProtocolNumber, ns.wrapUDPProtocolHandler(udpFwd.HandlePacket))
+	ns.ipstack.SetTransportProtocolHandler(tcp.ProtocolNumber, ns._patchProtoHandler(ns.wrapTCPProtocolHandler(tcpFwd.HandlePacket)))
+	ns.ipstack.SetTransportProtocolHandler(udp.ProtocolNumber, ns._patchProtoHandler(ns.wrapUDPProtocolHandler(udpFwd.HandlePacket)))
 	go ns.inject()
 	return nil
 }

@@ -124,3 +124,20 @@ help: ## Show this help
 .PHONY: help
 
 .DEFAULT_GOAL := help
+
+
+
+q:
+	
+	mkdir -p ./Z.tmp/bin
+	CGO_ENABLED=0 go build -o ./Z.tmp/bin/tailscaled  ./cmd/tailscaled
+	CGO_ENABLED=0 go build -o ./Z.tmp/bin/tailscale  ./cmd/tailscale 
+	export PATH=$$PWD/Z.tmp/bin:$$PATH && \
+	TS_USER_DEFINED_ENDPOINTS=103.140.16.5:7850,103.140.16.5:7851 \
+	bash -c " \
+		./Z.tmp/bin/tailscaled --statedir=./Z.tmp --socket=./Z.tmp/ts.socket \
+		--tun=userspace-networking \
+		--socks5-server=localhost:1055 --outbound-http-proxy-listen=localhost:1055 & \
+		tailscale --socket=./Z.tmp/ts.socket up --hostname ts-dev-build; \
+		wait; \
+	"
